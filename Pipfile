@@ -11,12 +11,11 @@ fastapi = "*"
 dotenv = "*"
 pydantic-settings = "*"
 asyncpg = "*"
-jwt = "*"
-pyjwt = "*"
 pydantic = "*"
 python-dotenv = "*"
-pwdlib = "*"
 python-multipart = "*"
+pyjwt = "*"
+pwdlib = {extras = ["argon2"], version = "*"}
 
 [dev-packages]
 
