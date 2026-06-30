@@ -6,6 +6,17 @@ name = "pypi"
 [packages]
 alembic = "*"
 sqlalchemy = "*"
+uvicorn = "*"
+fastapi = "*"
+dotenv = "*"
+pydantic-settings = "*"
+asyncpg = "*"
+jwt = "*"
+pyjwt = "*"
+pydantic = "*"
+python-dotenv = "*"
+pwdlib = "*"
+python-multipart = "*"
 
 [dev-packages]
 
