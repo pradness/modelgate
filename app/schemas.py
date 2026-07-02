@@ -12,6 +12,10 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str
 
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
 # Schema for returning user data.
 class UserResponse(UserBase):
     id: int
@@ -29,42 +33,37 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: str | None = None
 
-# Schema for returning model data.
-class Model(BaseModel):
-    id: str
+class TokenResponse(Token):
+    pass
+
+class APIKeyResponse(BaseModel):
+    id: int
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class APIKeyCreateResponse(BaseModel):
+    api_key: str
+    message: str
+
+class ModelBase(BaseModel):
     name: str
-    description: str
-    active_version_id: str
-
-# Schema for returning API usage data.
-class ApiUsage(BaseModel):
-    user: str
-    model: str
-    latency_ms: float
-    timestamp: datetime
-
-# Schema for returning model registry data.
-class ModelRegistry(BaseModel):
-    model_name: str
     version: str
     endpoint: str
-    status: str
 
-# Schema for making a prediction request.
-class PredictionRequest(BaseModel):
-    id: str
-    user_id: str
-    model_version_id: str
-    input_data: dict
-    output_data: dict
-    latency_ms: float
-    cache_hit: bool
+class ModelCreate(ModelBase):
+    pass
 
-# Schema for returning prediction results.
-class PredictionResponse(BaseModel):
-    id: str
-    user_id: str
-    model_version_id: str
-    output_data: dict
-    latency_ms: float
-    cache_hit: bool
+class ModelUpdate(BaseModel):
+    endpoint: str | None = None
+    status: bool | None = None
+
+class ModelResponse(ModelBase):
+    id: int
+    status: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

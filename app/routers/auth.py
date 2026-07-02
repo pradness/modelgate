@@ -65,7 +65,7 @@ def create_access_token(
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, 
-        SECRET_KEY, 
+        SECRET_KEY, # type: ignore
         algorithm=ALGORITHM
     )
 
@@ -85,7 +85,7 @@ async def get_current_user(
 
         payload = jwt.decode(
             token, 
-            SECRET_KEY, 
+            SECRET_KEY, # type: ignore
             algorithms=[ALGORITHM]
         )
         email: str = payload.get("sub")  # type: ignore
