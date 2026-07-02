@@ -59,4 +59,4 @@ class APIUsage(Base):
     updated_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     user = relationship("User", back_populates="usage_logs")
-    model = relationship("ModelRegisty", back_populates="usage_logs")
+    model = relationship("ModelRegistry", back_populates="usage_logs")

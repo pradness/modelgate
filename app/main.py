@@ -5,10 +5,10 @@
 # uvicorn app.main:app --reload = runs FastAPI app in web server with auto-reload
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 
 from app.database import engine, Base
-from app.routers import users, auth, apikeys
+from app.routers import users, auth, apikeys, registry
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -19,12 +19,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="ModelGate", lifespan=lifespan)
 
 try:
-    app.include_router(users.router)
     app.include_router(auth.router)
-    app.include_router(apikeys.router)
+    from app.routers.auth import get_current_user
+    app.include_router(users.router, dependencies=[Depends(get_current_user)])
+    app.include_router(apikeys.router, dependencies=[Depends(get_current_user)])
+    app.include_router(registry.router, dependencies=[Depends(get_current_user)])
+    
 except Exception as e:
     print(f"failed to include router: {e}")
-
 
 # -- FastAPI path -- similar to route
 @app.get("/") 

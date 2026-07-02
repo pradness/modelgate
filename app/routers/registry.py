@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import ModelRegistry
 from app.routers.auth import get_current_user
 
-router = APIRouter(prefix="/models", tags=["models"])
+router = APIRouter(prefix="/models", tags=["models"], dependencies=[Depends(get_current_user)])
 
 @router.post("/", response_model=ModelResponse)
 async def create_model(
@@ -23,6 +23,7 @@ async def create_model(
 @router.get("/", response_model = list[ModelResponse])
 async def list_models(
     db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     result = await db.execute(
         select(ModelRegistry)
@@ -34,6 +35,7 @@ async def get_model(
     model_id: int,
     version: str,
     db: AsyncSession = Depends(get_db),
+    current_user: str = Depends(get_current_user),
 ):
     result = await db.execute(
         select(ModelRegistry).where(ModelRegistry.id == model_id and ModelRegistry.version == version)

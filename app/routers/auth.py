@@ -16,7 +16,7 @@ from app.schemas import UserCreate, UserResponse, Token
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY") or "ed1def9b7913d574e7e41d84172c3dab6927343e037f976cb3442ddf2725419a"    
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -78,7 +78,8 @@ async def get_current_user(
 
     credential_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
-        detail="Could not validate credentials"
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"}
     )
 
     try:

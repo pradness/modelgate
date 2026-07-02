@@ -9,7 +9,7 @@ from app.models import APIKey, User
 from app.routers.auth import get_current_user, get_password_hash
 from app.schemas import APIKeyCreateResponse, APIKeyResponse
 
-router = APIRouter(prefix="/apikeys", tags=["apikeys"])
+router = APIRouter(prefix="/apikeys", tags=["apikeys"], dependencies=[Depends(get_current_user)])
 
 def generate_apikey() -> str:
     return f"pk_live_{secrets.token_urlsafe(32)}"
