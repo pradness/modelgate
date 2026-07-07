@@ -1,22 +1,25 @@
 # auth
-from datetime import datetime, timedelta
 import os
+from datetime import datetime, timedelta
 
 import jwt
-from jwt.exceptions import InvalidTokenError
-from pwdlib import PasswordHash
+from dotenv import find_dotenv, load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jwt.exceptions import InvalidTokenError
+from pwdlib import PasswordHash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models import User
-from app.schemas import UserCreate, UserResponse, Token
+from app.schemas import Token, UserCreate, UserResponse
 
-from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
-SECRET_KEY = os.getenv("SECRET_KEY") or "ed1def9b7913d574e7e41d84172c3dab6927343e037f976cb3442ddf2725419a"    
+SECRET_KEY = (
+    os.getenv("SECRET_KEY")
+    or "ed1def9b7913d574e7e41d84172c3dab6927343e037f976cb3442ddf2725419a"
+)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -26,34 +29,32 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return password_h.verify(plain_password, hashed_password)
+
 
 def get_password_hash(password: str) -> str:
     return password_h.hash(password)
 
-async def get_user(db: AsyncSession, email: str) -> User | None:
 
-    result = await db.execute(select(User).where(User.email == email))
+async def get_user(db: AsyncSession, username: str) -> User | None:
+    result = await db.execute(select(User).where(User.username == username))
     return result.scalar_one_or_none()
 
-async def authenticate_user(
-    db: AsyncSession, 
-    email: str, 
-    password: str
-) -> User | None:
 
-    user = await get_user(db, email)
+async def authenticate_user(
+    db: AsyncSession, username: str, password: str
+) -> User | None:
+    user = await get_user(db, username)
 
     if not user or not verify_password(password, user.password_hash):
         return None
 
     return user
 
-def create_access_token(
-    data: dict, 
-    expires_delta: timedelta | None = None
-) -> str:
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
 
     to_encode = data.copy()
 
@@ -64,68 +65,65 @@ def create_access_token(
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, 
-        SECRET_KEY, # type: ignore
-        algorithm=ALGORITHM
+        to_encode,
+        SECRET_KEY,  # type: ignore
+        algorithm=ALGORITHM,
     )
 
     return encoded_jwt
 
+
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), 
-    db: AsyncSession = Depends(get_db)
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ) -> User:
 
     credential_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, 
+        status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"}
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
     try:
-
         payload = jwt.decode(
-            token, 
-            SECRET_KEY, # type: ignore
-            algorithms=[ALGORITHM]
+            token,
+            SECRET_KEY,  # type: ignore
+            algorithms=[ALGORITHM],
         )
-        email: str = payload.get("sub")  # type: ignore
-
-        if email is None:
+        username: str = payload.get("sub")  # type: ignore
+        if username is None:
             raise credential_exception
 
     except InvalidTokenError:
         raise credential_exception
 
-    user = await get_user(db, email)
+    user = await get_user(db, username)
     if user is None:
         raise credential_exception
     return user
 
+
 async def get_current_active_user(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ) -> User:
     return current_user
 
+
 @router.post("/register", response_model=UserResponse)
 async def register(
-    user: UserCreate, 
-    db: AsyncSession = Depends(get_db)
+    user: UserCreate, db: AsyncSession = Depends(get_db)
 ) -> UserResponse:
 
     hashed_password = get_password_hash(user.password)
 
     db_user = User(
-        email=user.email, 
-        password_hash=hashed_password, 
-        role=user.role
+        username=user.username, password_hash=hashed_password, role=user.role
     )
 
-    existing_user = await get_user(db, user.email)
+    existing_user = await get_user(db, user.username)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Username already registered",
         )
 
     db.add(db_user)
@@ -133,23 +131,20 @@ async def register(
     await db.refresh(db_user)
     return UserResponse.model_validate(db_user)
 
+
 @router.post("/login", response_model=Token)
 async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(), 
-    db: AsyncSession = Depends(get_db)
+    form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)
 ) -> Token:
 
-    db_user = await authenticate_user(
-        db, form_data.username, 
-        form_data.password
-    )
+    db_user = await authenticate_user(db, form_data.username, form_data.password)
 
     if not db_user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, 
-            detail="Incorrect email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
         )
-        
-    access_token = create_access_token(data={"sub": db_user.email})
+
+    access_token = create_access_token(data={"sub": db_user.username})
 
     return Token(access_token=access_token, token_type="bearer")
