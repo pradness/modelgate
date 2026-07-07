@@ -13,10 +13,11 @@ router = APIRouter(
     prefix="/apikeys", tags=["apikeys"], dependencies=[Depends(get_current_user)]
 )
 
-
 def generate_apikey() -> str:
     return f"pk_live_{secrets.token_urlsafe(32)}"
 
+#def check_apikey(api_key: str) -> bool:
+    
 
 @router.post("/create", response_model=APIKeyCreateResponse)
 async def create_apikey(

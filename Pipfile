@@ -16,6 +16,7 @@ python-dotenv = "*"
 python-multipart = "*"
 pyjwt = "*"
 pwdlib = {extras = ["argon2"], version = "*"}
+httpx = "*"
 
 [dev-packages]
 

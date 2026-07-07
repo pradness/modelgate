@@ -2,9 +2,18 @@
 
 from enum import Enum
 
-from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, Integer, String, func
+from sqlalchemy import (
+    TIMESTAMP,
+    Boolean,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.schema import CheckConstraint
 
 from app.database import Base
 
@@ -17,6 +26,10 @@ class UserRole(str, Enum):
 class TaskType(str, Enum):
     TEXT_GENERATION = "text_generation"
 
+class ModelStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    ARCHIVED = "ARCHIVED"
+    DELETED = "DELETED"
 
 # One to one copy of the User model.
 class User(Base):
@@ -84,6 +97,11 @@ class ModelRegistry(Base):
 
 class ModelVersions(Base):
     __tablename__ = "model_versions"
+    __table_args__ = (
+        UniqueConstraint("model_id", "version", name="uq_model_version_per_model"),
+        CheckConstraint("length(service_url) > 0", name="service_url not empty"),
+        CheckConstraint("length(artifact_uri) > 0", name="artifact_uri not empty")
+    )
 
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, index=True, nullable=False
@@ -92,7 +110,7 @@ class ModelVersions(Base):
     version: Mapped[str] = mapped_column(String, nullable=False)
     service_url: Mapped[str] = mapped_column(String, nullable=False)
     artifact_uri: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(SAEnum(ModelStatus), nullable=False)
     created_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=func.now())
     updated_at: Mapped[str] = mapped_column(
         TIMESTAMP, server_default=func.now(), onupdate=func.now()
