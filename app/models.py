@@ -72,6 +72,7 @@ class APIKey(Base):
     )
 
     user = relationship("User", back_populates="api_keys")
+    usage_logs = relationship("APIUsage", back_populates="api_key")
 
 
 class ModelRegistry(Base):
@@ -127,6 +128,7 @@ class APIUsage(Base):
         Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    api_key_id: Mapped[int] = mapped_column(ForeignKey("api_keys.id"), nullable=False)
     model_version_id: Mapped[int] = mapped_column(
         ForeignKey("model_versions.id"), nullable=False
     )
@@ -139,4 +141,5 @@ class APIUsage(Base):
     )
 
     user = relationship("User", back_populates="usage_logs")
+    api_key = relationship("APIKey", back_populates="usage_logs")
     model_version = relationship("ModelVersions", back_populates="usage_logs")

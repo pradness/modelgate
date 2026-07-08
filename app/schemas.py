@@ -175,3 +175,38 @@ class LatencyStats(BaseModel):
 class TopModels(BaseModel):
     model: str
     requests: int
+
+
+# -----------------------------------------ANALYTICS RESPONSES
+
+
+class VersionAnalyticsItem(BaseModel):
+    version: str
+    status: str
+    requests: int
+    average_latency_ms: float
+    cache_hit_rate: float
+
+
+class ModelVersionsAnalyticsResponse(BaseModel):
+    model: str
+    versions: list[VersionAnalyticsItem]
+
+
+class APIKeyAnalyticsItem(BaseModel):
+    id: int
+    name: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class APIKeyAnalyticsResponse(BaseModel):
+    total_keys: int
+    active_keys: int
+    total_requests: int
+    average_latency_ms: float
+    cache_hit_rate: float
+    keys: list[APIKeyAnalyticsItem]
