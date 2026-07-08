@@ -7,7 +7,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
-
+from app.redis import connect_redis, disconnect_redis
 from app.database import Base, engine
 from app.routers import apikeys, auth, predict, registry, users, versions
 
@@ -16,7 +16,9 @@ from app.routers import apikeys, auth, predict, registry, users, versions
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await connect_redis()
     yield
+    await disconnect_redis()
 
 
 app = FastAPI(title="ModelGate", lifespan=lifespan)

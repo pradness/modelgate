@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import ModelVersions, ModelStatus, User
 from app.routers.auth import get_current_user
-from app.routers.model_queries import get_model_version, get_owned_model
+from app.services.model_queries import get_model_version, get_owned_model
 from app.schemas import (
     ModelDetailResponse,
     ModelVersionCreate,

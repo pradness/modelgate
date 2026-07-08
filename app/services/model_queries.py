@@ -90,6 +90,7 @@ async def get_api_key_by_value(
 async def record_api_usage(
     db: AsyncSession,
     user_id: int,
+    api_key_id: int,
     model_version_id: int,
     latency_ms: float,
     status_code: int,
@@ -97,6 +98,7 @@ async def record_api_usage(
 ) -> APIUsage:
     usage = APIUsage(
         user_id=user_id,
+        api_key_id=api_key_id,
         model_version_id=model_version_id,
         latency_ms=latency_ms,
         status_code=status_code,

@@ -6,39 +6,21 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.routers.model_queries import (
+from app.routers.auth import get_current_user
+from app.schemas import PredictionRequest, PredictionResponse
+from app.services.cache import get_prediction, make_cache_key, store_prediction
+from app.services.rate_limit import check_rate_limit
+from app.services.model_queries import (
     get_api_key_by_value,
     get_latest_model_version,
     get_model_version,
     get_owned_model_by_name,
     record_api_usage,
 )
-from app.routers.auth import get_current_user
-from app.schemas import PredictionRequest, PredictionResponse
 
-router = APIRouter(prefix="/predict", tags=["predict"], dependencies=[Depends(get_current_user)])
-
-
-def _extract_cached(body_text: str, headers: dict[str, str]) -> bool:
-    try:
-        body = json.loads(body_text)
-        if isinstance(body, dict) and isinstance(body.get("cached"), bool):
-            return body["cached"]
-    except json.JSONDecodeError:
-        pass
-
-    cache_header = headers.get("x-cache") or headers.get("X-Cache")
-    if cache_header is not None:
-        return cache_header.lower() in {"hit", "true", "1", "cached"}
-
-    return False
-
-
-def _extract_prediction(body_text: str):
-    try:
-        return json.loads(body_text)
-    except json.JSONDecodeError:
-        return body_text
+router = APIRouter(
+    prefix="/predict", tags=["predict"], dependencies=[Depends(get_current_user)]
+)
 
 
 async def _send_upstream_request(
@@ -47,6 +29,13 @@ async def _send_upstream_request(
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(url, json=payload)
         return response.status_code, dict(response.headers), response.text
+
+
+def _extract_prediction(body_text: str):
+    try:
+        return json.loads(body_text)
+    except json.JSONDecodeError:
+        return body_text
 
 
 @router.post("/{model_name}", response_model=PredictionResponse)
@@ -72,6 +61,8 @@ async def predict(
             headers={"WWW-Authenticate": "ApiKey"},
         )
 
+    await check_rate_limit(api_key_record.id)
+    
     model = await get_owned_model_by_name(db, model_name, api_key_record.user_id)
     if model is None:
         raise HTTPException(
@@ -88,33 +79,55 @@ async def predict(
             status_code=status.HTTP_404_NOT_FOUND, detail="Model version not found"
         )
 
+    cache_key = make_cache_key(model.name, model_version.version, request.model_dump())
     started_at = perf_counter()
 
+    cached_prediction = await get_prediction(cache_key)
+    if cached_prediction is not None:
+        latency_ms = (perf_counter() - started_at) * 1000
+        await record_api_usage(
+            db=db,
+            user_id=api_key_record.user_id,
+            api_key_id=api_key_record.id,
+            model_version_id=model_version.id,
+            latency_ms=latency_ms,
+            status_code=status.HTTP_200_OK,
+            cached=True,
+        )
+        return PredictionResponse(
+            prediction=cached_prediction,
+            version=model_version.version,
+            cached=True,
+            latency_ms=latency_ms,
+        )
+
     try:
-        status_code, headers, body_text = await _send_upstream_request(
+        status_code, _headers, body_text = await _send_upstream_request(
             model_version.service_url,
             request.model_dump(),
         )
-        cached = _extract_cached(body_text, headers)
         latency_ms = (perf_counter() - started_at) * 1000
         prediction = _extract_prediction(body_text)
 
         await record_api_usage(
             db=db,
             user_id=api_key_record.user_id,
+            api_key_id=api_key_record.id,
             model_version_id=model_version.id,
             latency_ms=latency_ms,
             status_code=status_code,
-            cached=cached,
+            cached=False,
         )
 
-        if status_code >= 400:
+        if status_code < 200 or status_code >= 300:
             raise HTTPException(status_code=status_code, detail=prediction)
+
+        await store_prediction(cache_key, prediction)
 
         return PredictionResponse(
             prediction=prediction,
             version=model_version.version,
-            cached=cached,
+            cached=False,
             latency_ms=latency_ms,
         )
 
@@ -123,6 +136,7 @@ async def predict(
         await record_api_usage(
             db=db,
             user_id=api_key_record.user_id,
+            api_key_id=api_key_record.id,
             model_version_id=model_version.id,
             latency_ms=latency_ms,
             status_code=status.HTTP_502_BAD_GATEWAY,

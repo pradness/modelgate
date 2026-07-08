@@ -17,6 +17,7 @@ python-multipart = "*"
 pyjwt = "*"
 pwdlib = {extras = ["argon2"], version = "*"}
 httpx = "*"
+redis = "*"
 
 [dev-packages]
 
