@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 
 from app.database import Base, engine
-from app.routers import apikeys, auth, predict, registry, users
+from app.routers import apikeys, auth, predict, registry, users, versions
 
 
 @asynccontextmanager
@@ -28,7 +28,8 @@ try:
     app.include_router(users.router, dependencies=[Depends(get_current_user)])
     app.include_router(apikeys.router, dependencies=[Depends(get_current_user)])
     app.include_router(registry.router, dependencies=[Depends(get_current_user)])
-    app.include_router(predict.router)
+    app.include_router(predict.router, dependencies=[Depends(get_current_user)])
+    app.include_router(versions.router, dependencies=[Depends(get_current_user)])
 
 except Exception as e:
     print(f"failed to include router: {e}")

@@ -36,7 +36,7 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True, nullable=False
+        Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     username: Mapped[str] = mapped_column(
         String, unique=True, index=True, nullable=False
@@ -60,7 +60,7 @@ class APIKey(Base):
     __tablename__ = "api_keys"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True, nullable=False
+        Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
@@ -78,7 +78,7 @@ class ModelRegistry(Base):
     __tablename__ = "models"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True, nullable=False
+        Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=True)
@@ -104,13 +104,13 @@ class ModelVersions(Base):
     )
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True, nullable=False
+        Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     model_id: Mapped[int] = mapped_column(ForeignKey("models.id"), nullable=False)
     version: Mapped[str] = mapped_column(String, nullable=False)
     service_url: Mapped[str] = mapped_column(String, nullable=False)
     artifact_uri: Mapped[str] = mapped_column(String, nullable=False)
-    status: Mapped[str] = mapped_column(SAEnum(ModelStatus), nullable=False)
+    status: Mapped[str] = mapped_column(SAEnum(ModelStatus), nullable=False, default=ModelStatus.ACTIVE)
     created_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=func.now())
     updated_at: Mapped[str] = mapped_column(
         TIMESTAMP, server_default=func.now(), onupdate=func.now()
@@ -124,7 +124,7 @@ class APIUsage(Base):
     __tablename__ = "api_usage"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, index=True, nullable=False
+        Integer, primary_key=True, index=True, nullable=False, autoincrement=True
     )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     model_version_id: Mapped[int] = mapped_column(

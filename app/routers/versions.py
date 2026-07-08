@@ -155,7 +155,7 @@ async def update_model_version(
     return version_model
 
 
-@router.delete("/{version}", response_model=ModelVersionResponse, status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{version}", response_model=ModelVersionResponse, status_code=status.HTTP_200_OK)
 async def delete_version(
     model_id: int,
     version: str,

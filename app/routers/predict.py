@@ -13,9 +13,10 @@ from app.routers.model_queries import (
     get_owned_model_by_name,
     record_api_usage,
 )
+from app.routers.auth import get_current_user
 from app.schemas import PredictionRequest, PredictionResponse
 
-router = APIRouter(prefix="/predict", tags=["predict"])
+router = APIRouter(prefix="/predict", tags=["predict"], dependencies=[Depends(get_current_user)])
 
 
 def _extract_cached(body_text: str, headers: dict[str, str]) -> bool:
