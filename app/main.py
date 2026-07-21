@@ -7,9 +7,10 @@
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.redis import connect_redis, disconnect_redis
 from app.database import Base, engine
-from app.routers import apikeys, auth, predict, registry, users, versions
+from app.routers import analytics, apikeys, auth, predict, registry, users, versions
 
 
 @asynccontextmanager
@@ -23,12 +24,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="ModelGate", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 try:
     app.include_router(auth.router)
     from app.routers.auth import get_current_user
 
     app.include_router(users.router, dependencies=[Depends(get_current_user)])
     app.include_router(apikeys.router, dependencies=[Depends(get_current_user)])
+    app.include_router(analytics.router, dependencies=[Depends(get_current_user)])
     app.include_router(registry.router, dependencies=[Depends(get_current_user)])
     app.include_router(predict.router, dependencies=[Depends(get_current_user)])
     app.include_router(versions.router, dependencies=[Depends(get_current_user)])

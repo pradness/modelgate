@@ -219,4 +219,54 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
->>>>>>> 7ee22714f5ee3fb90d6c5bcc19ea875c1ed89955
+
+# Stitch
+stitch*
+
+# Vite + React frontend
+node_modules/
+.pnpm-store/
+
+# Production build outputs
+dist/
+dist-ssr/
+build/
+
+# Vite cache and temporary files
+.vite/
+.nuxt/
+.cache/
+
+# Environment variables (Never commit secret keys)
+.env
+.env.production
+.env.local
+.env.*.local
+
+# Logs
+lh/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and System files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Testing and coverage outputs
+coverage/
+.eslintcache
+
+# AI
+.codex
+.agents

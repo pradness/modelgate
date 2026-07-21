@@ -2,15 +2,7 @@
 
 from enum import Enum
 
-from sqlalchemy import (
-    TIMESTAMP,
-    Boolean,
-    ForeignKey,
-    Integer,
-    String,
-    UniqueConstraint,
-    func,
-)
+from sqlalchemy import TIMESTAMP, Boolean, ForeignKey, Integer, String, UniqueConstraint, func
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import CheckConstraint
@@ -83,9 +75,7 @@ class ModelRegistry(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=True)
-    task: Mapped[TaskType] = mapped_column(
-        SAEnum(TaskType, name="task_type_enum"), nullable=False
-    )
+    task: Mapped[str] = mapped_column(String, nullable=False)
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[str] = mapped_column(TIMESTAMP, server_default=func.now())
     updated_at: Mapped[str] = mapped_column(
